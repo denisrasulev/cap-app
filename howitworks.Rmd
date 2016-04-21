@@ -5,19 +5,18 @@ date: "April, 2016"
 output: html_document
 ---
 
-## How it works
-
 ### Introduction
 Here you will learn complete process from obtaining initial data to working app:   
-1. Download and Import data
-2. Clean data
-3. Create Sample
-4. Create Frequency Tables
-5. Train Model or Save Tables?
-6. Predict or Read Tables?
-7. Shiny App
 
-### Basic Preparation and Setup the Environment    
+1. Preparation and Download Data    
+2. Functions Declarations Block    
+3. Read Data and Create Sample    
+4. Tokenization and Frequency Tables    
+5. How it works all together?   
+6. Shiny App    
+7. Contacts    
+
+### 1.1 Basic Preparation and Setup the Environment    
 Here we load some libraries (we need only four :)) and setup working directory
 ```{r setup, eval=FALSE}
 # load necessary R librabires
@@ -30,7 +29,7 @@ library(ggplot2)    # Implementation of the grammar of graphics in R
 setwd("/Volumes/data/coursera/capstone")
 ```
 
-### 3. Download and Import data
+### 1.2 Downloading Data
 There is a link to download data from the internet. File contains texts for four languages. Out of four available (DE, US, FI, RU) we will use "US" training data for this project. We check if the initial file exists ("Coursera-SwiftKey.zip") and download / unzip it, if required.
 ```{r download, eval=FALSE}
 # check if zip file already exists and download if it is missing
@@ -45,11 +44,13 @@ if (!file.exists("./data/en_US/en_US.blogs.txt")) {
 }
 ```
 
+### 2. Functions Declarations Block
+
 Then we make some functions that will help us to process the data. These are functions for text cleaning ('clean'), for counting terms frequencies and sorting them in decreasing order (sort.freq) and functions for tokenization (nXgram).
 
-I would like to pay special attention to the cleaning functions that I have created. It took some time and numerous attempts to prepare the functions that gives more or less clean text at the end.
+I would like to pay special attention to the cleaning function. It took some time and numerous attempts to prepare the one that gives good and clean text at the end.
 
-* First of all, we convert everything to lower case in order to avoid and duplicates.
+* First of all, we convert everything to lower case in order to avoid any duplicates.
 * After that we remove all digits and control symbols.
 * Then it took some time to prepare sort of dictionary to replace very common apostrophed phrases, like 'you're' -> 'you are'. In fact, all of these was manual work.
 * Then we remove all web urls.
@@ -57,7 +58,7 @@ I would like to pay special attention to the cleaning functions that I have crea
 * After punctuation we replace all misspeled words like 'youre' -> 'you are' and they are of two types: those that can not be part of any word and those that can. So it required different coding to get them all correctly.
 * Then it required to execute the very same code at least five times. Reason is simple - after removing digits there were lots of 'hanging' single letters. I didn't find better way to remove them at once, so did it five times. Seems to be working fine. Please, notice that single letter 'I' is not removed as it is important part of the language!
 * Next, we do the same for the letters in the beginning of the sentences.
-* Finally, we remove leading and trailing space.
+* Finally, we remove leading and trailing spaces.
 * Done :)
 
 One important finding. If you create relatively small corpus (<= 1GB) then base function 'rowSums' that is used to calculate frequencies of the terms works ok. As soon as you go for bigger numbers it generates errors. Therefore I have used 'row_sums' function from 'slam' package which was developed to work specifically with sparse matrices. And it works absolutely fine.
@@ -155,182 +156,92 @@ n3gram <- function(x) unlist(lapply(ngrams(words(x), 3), paste, collapse = " "),
 n4gram <- function(x) unlist(lapply(ngrams(words(x), 4), paste, collapse = " "), use.names = FALSE)
 ```
 
-### 4. Exploratory Data Analysis
-Let's see some basic statistics for 3 data files, including size, number of lines, words and characters, and words per line (WPL) summaries. We will also plot some histograms so we can see and better understand the distribution of these parameters.
+### 3. Read Data and Create Sample
+As our raw data is quite big, we will create smaller sample combining data from all 3 files (news, blogs, twits). After that we will clean it from everything that is not required or is not useful for our purposes, namely - digits, punctuation, control characters etc. 'numLines' is a variable which says how much information you want. The more it is, the bigger will be your corpus and longer it will take to process everything. So, we read data in, create one combined sample, clean it and create temporary corpus.
 
-From this statistics, we may see that WPL value for blogs is generally higher (41.75), followed by news (34.41) and twits (12.75). This reflects the nature of each communication channel and preferences of its' authors/readers.
+```{r sample, eval=FALSE}
+# read data
+numLines <- 5000
+news  <- readLines("./data/en_US/en_US.news.txt",    numLines, encoding = "UTF-8")
+blogs <- readLines("./data/en_US/en_US.blogs.txt",   numLines, encoding = "UTF-8")
+twits <- readLines("./data/en_US/en_US.twitter.txt", numLines, encoding = "UTF-8")
 
-From the histograms, we have also noticed that the WPL for all data types are right-skewed (i.e. have longer right tail). This may be an indication of the general trends towards shorter communications.
-
-```{r basic stats, warning=FALSE}
-# find files sizes
-size.news   <- file.info("./data/en_US/en_US.news.txt")$size    / 1024^2
-size.blogs  <- file.info("./data/en_US/en_US.blogs.txt")$size   / 1024^2
-size.twits  <- file.info("./data/en_US/en_US.twitter.txt")$size / 1024^2
-
-# count number of words
-words.news  <- stri_count_words(news)
-words.blogs <- stri_count_words(blogs)
-words.twits <- stri_count_words(twits)
-
-# count number of characters in words
-chars.news  <- stri_stats_latex(news)["CharsWord"]
-chars.blogs <- stri_stats_latex(blogs)["CharsWord"]
-chars.twits <- stri_stats_latex(twits)["CharsWord"]
-
-# prepare summary stats table
-summary.table <- data.frame(File     = c("news", "blogs", "twitter"),
-                            File.MB  = round(c(size.news, size.blogs, size.twits), 2),
-                            N.Lines  = c(length(news), length(blogs), length(twits)),
-                            N.Words  = c(sum(words.news), sum(words.blogs), sum(words.twits)),
-                            N.Chars  = c(sum(chars.news), sum(chars.blogs), sum(chars.twits)),
-                            WPL      = c(format(round(mean(words.news), 2), nsmall = 2),
-                                         format(round(mean(words.blogs),2), nsmall = 2),
-                                         format(round(mean(words.twits),2), nsmall = 2))
-                            )
-summary.table
-
-# plot histograms for each data type
-qplot(words.news,
-        geom = "histogram",
-        main = "Words per Publication for US News Texts",
-        xlab = "Number of Words",
-        ylab = "Frequency",
-        xlim = c(0,200),
-        binwidth = 2,
-        fill = I("green"),
-        col  = I("black"))
-
-qplot(words.blogs,
-        geom = "histogram",
-        main = "Words per Publication for US Blogs Texts",
-        xlab = "Number of Words",
-        ylab = "Frequency",
-        xlim = c(0,200),
-        binwidth = 2,
-        fill = I("green"),
-        col  = I("black"))
-
-qplot(words.twits,
-        geom = "histogram",
-        main = "Words per Publication for Twitter Texts",
-        xlab = "Number of Words",
-        ylab = "Frequency",
-        xlim = c(0,200),
-        binwidth = 2,
-        fill = I("green"),
-        col  = I("black"))
-
-# remove unnecessary variables from memory
-rm(chars.news, chars.blogs, chars.twits, size.news, size.blogs, size.twits, words.news, words.blogs, words.twits, summary.table)
-```
-
-### 5. Create Data Sample and Clean It
-As our raw data is quite big, we will create smaller sample combining data from all 3 files (news, blogs, twits). After that we will clean it from everything that is not required or is not useful for our purposes, namely - digits, punctuation, control characters etc.
-
-```{r sample}
-# create sample
-set.seed(2016)
-
-# we'll take 5% of data from each file
-sample.news  <- sample(news,  length(news)  * 0.05)
-sample.blogs <- sample(blogs, length(blogs) * 0.05)
-sample.twits <- sample(twits, length(twits) * 0.05)
-
-# combine them into one
-sample  <- c(sample.news, sample.blogs, sample.twits)
-
-# prepare helper function
-clean <- function(x)
-{
-    x <- tolower(x)
-    x <- gsub("[[:digit:]]", "", x)
-    x <- gsub("[[:punct:]]", "", x)
-    x <- gsub("[[:cntrl:]]", "", x)
-    x <- gsub("^\\s+|\\s+$", "", x)
-    return(x)
-}
-
-# and clean our sample from unnecessary information
+# combine into single block and clean
+sample <- c(news, blogs, twits)
 sample <- clean(sample)
-```
 
-### 6. Create Corpus and N-Grams
-At this stage we will do the following:  
-- Construct a corpus from the files.  
-- Tokenization.  
-- Build basic n-gram model.  
-
-```{r corpus}
-# helper function for convenience
-freq <- function(x){
-    srt <- sort(rowSums(as.matrix(x)), decreasing = TRUE)
-    frf <- data.frame(word = names(srt), freq = srt)
-    return(frf)
-}
-
-# prepare functions for tokenization
-UnigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min=1, max=1))
-BeegramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min=2, max=2))
-TrigramTokenizer <- function(x) NGramTokenizer(x, Weka_control(min=3, max=3))
-
-# create our corpus
+# create our corpus and clean it
 corp <- VCorpus(VectorSource(sample))
+corp <- tm_map(corp, stripWhitespace)
+corp <- tm_map(corp, removeWords, stopwords("english"))
 
-# clean corpus from profanity words
-profanity  <- readLines("http://www.cs.cmu.edu/~biglou/resources/bad-words.txt")
-corp <- tm_map(corp, removeWords, profanity)
-
-# create term document matrix for unigrams
-tdm1 <- TermDocumentMatrix(corp, control = list(tokenize = UnigramTokenizer))
-tdm1 <- removeSparseTerms(tdm1, 0.99)
-frq1 <- freq(tdm1)
-
-# plot top 30 of unigrams
-ggplot(frq1[1:30,],
-        aes(x = reorder(word, freq), y = freq)) +
-        geom_bar(stat = "identity", fill = "green", col = "black") +
-        theme_bw() +
-        coord_flip() +
-        theme(axis.title.y = element_blank()) +
-        labs(y = "Frequency", title = "Most common Unigrams in the Sample")
-
-# create term document matrix for bigrams
-tdm2 <- TermDocumentMatrix(corp, control = list(tokenize = BeegramTokenizer))
-tdm2 <- removeSparseTerms(tdm2, 0.999)
-frq2 <- freq(tdm2)
-
-# plot top 30 of bigrams
-ggplot(frq2[1:30,],
-        aes(x = reorder(word, freq), y = freq)) +
-        geom_bar(stat = "identity", fill = "green", col = "black") +
-        theme_bw() +
-        coord_flip() +
-        theme(axis.title.y = element_blank()) +
-        labs(y = "Frequency", title = "Most common Bigrams in the Sample")
-
-# create term document matrix for trigrams
-tdm3 <- TermDocumentMatrix(corp, control = list(tokenize = TrigramTokenizer))
-tdm3 <- removeSparseTerms(tdm3, 0.9999)
-frq3 <- freq(tdm3)
-
-# plot top 30 of bigrams
-ggplot(frq3[1:30,],
-        aes(x = reorder(word, freq), y = freq)) +
-        geom_bar(stat = "identity", fill = "green", col = "black") +
-        theme_bw() +
-        coord_flip() +
-        theme(axis.title.y = element_blank()) +
-        labs(y = "Frequency", title = "Most common Trigrams in the Sample")
+# clear some memory
+rm(sample, news, blogs, twits)
 ```
 
-### 7. Plans for the Project and App
+### 4. Tokenization and Frequency Tables 
+At this stage we will do the following 4 times as I am using up to 4grams model:  
+- Create Term Document Matrix.  
+- Tokenize it with according function.  
+- Remove very rare terms from TDM.
+- Count terms frequencies and sort them in decreasing order.  
+- Save N-gram table to file system.   
+- This is N-grams model.
 
-Now that we have performed some exploratory analysis, we are ready to start building the predictive model(s) and eventually the data product. Below are high-level plan to achieve this goals:
+```{r corpus, eval=FALSE}
+# create term document matrix for unigrams, reduce sparsity and save
+tdm1 <- TermDocumentMatrix(corp, control = list(tokenize = n1gram))
+tdm1 <- removeSparseTerms(tdm1, 0.9999)
+frq1 <- sort.freq(tdm1)
+saveRDS(frq1, file = "data1.RDS")
 
-- Use N-grams to generate tokens of one to four words.
-- Find optimal balance between quality (sample size) and speed
-- Build predictive model(s) using the tokens.
-- Develop data product (Shiny app) to make next word prediction from user input.
+# create term document matrix for bigrams, reduce sparsity and save
+tdm2 <- TermDocumentMatrix(corp, control = list(tokenize = n2gram))
+tdm2 <- removeSparseTerms(tdm2, 0.9999)
+frq2 <- sort.freq(tdm2)
+saveRDS(frq2, file = "data2.RDS")
 
-For the Shiny, the plan is to create an app with a very simple interface where a user can enter a string of text. Prediction model will then give a list of suggested words to update the next one.
+# create term document matrix for trigrams, reduce sparsity and save
+tdm3 <- TermDocumentMatrix(corp, control = list(tokenize = n3gram))
+tdm3 <- removeSparseTerms(tdm3, 0.9999)
+frq3 <- sort.freq(tdm3)
+saveRDS(frq3, file = "data3.RDS")
+
+# create term document matrix for fourgrams, reduce sparsity and save
+tdm4 <- TermDocumentMatrix(corp, control = list(tokenize = n4gram))
+tdm4 <- removeSparseTerms(tdm4, 0.9999)
+frq4 <- sort.freq(tdm4)
+saveRDS(frq4, file = "data4.RDS")
+```
+
+### 5. How it works all together?
+
+Now that we have generated most statistically frequent 1-, 2-, 3- and 4-grams and saved them all to file system, let me briefly explan how works Shiny App.
+
+- First of all, app loads our tables that we have generated earlier.
+- Then, when user enters some words into text input field, application takes this input and cleans it.
+
+To predict the next word, app:    
+
+- Searches 4grams for entry starting with the last three words of user input    
+- If nothing was found, it searches 3grams for the last two words of user input     
+- If nothing was found, it searches 2grams for the last word of user input    
+- If nothing found again, app uses unigram with the highest frequency    
+
+That's basically it. While working on this project, I have learned a lot of new and interesting things. Many ideas were generated and carefully written to notebook in order to work on them further. For instance, can we use 'trie' structures and will they be more efficient in our case? Some features were not realized, like spell checking user entry, error messaging and many other due to limited time. But all of them are in the notebook :)
+
+### 6. Shiny App
+
+You can find working app here: [ShinyApp](https://www.linkedin.com/in/denisrasulev)
+
+### 7. Contacts
+
+Please, fill free to contact me if you have any questions / comments / requests / projects to work on / etc :)
+
+- [Facebook](https://www.facebook.com/denis.rasulev)   
+- [LinkedIn](https://www.linkedin.com/in/denisrasulev)    
+- [Twitter](https://twitter.com/drasulev)    
+- [GitHub](https://github.com/denrasulev)    
+- [Pinterest](https://www.pinterest.com/denisrasulev)    
+
+
