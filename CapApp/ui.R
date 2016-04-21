@@ -47,14 +47,26 @@ shinyUI(
 
         fluidRow(
             column(12, align = "center", offset = 0,
-                    tags$p("How it works . App Presentation . Code on GitHub"),
+                    tags$p("\"Simplicity is the ultimate sophistication.\" - Leonardo da Vinci."),
+                    tags$p("If you need more information or want to connect with me, please, follow any of the links below."),
+                    tags$br(),
+                    tags$p(
+                        tags$a(href = "https://www.linkedin.com/in/denisrasulev", "How it works"),
+                        tags$span("."),
+                        tags$a(href = "https://www.linkedin.com/in/denisrasulev", "App presentation"),
+                        tags$span("."),
+                        tags$a(href = "https://github.com/denrasulev/CapApp/tree/master", "Code on GitHub")
+                    ),
+
                     tags$p(
                         tags$a(href = "https://www.linkedin.com/in/denisrasulev", "LinkedIn"),
-                        tags$span(" . "),
+                        tags$span("."),
                         tags$a(href = "https://www.facebook.com/denis.rasulev", "Facebook"),
-                        tags$span(" . "),
+                        tags$span("."),
                         tags$a(href = "https://twitter.com/drasulev", "Twitter"),
-                        tags$span(" . "),
+                        tags$span("."),
+                        tags$a(href = "https://github.com/denrasulev", "GitHub"),
+                        tags$span("."),
                         tags$a(href = "https://www.pinterest.com/denisrasulev", "Pinterest")
                     )
             )
