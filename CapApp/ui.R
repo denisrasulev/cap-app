@@ -1,28 +1,66 @@
 suppressWarnings(library(shiny))
+suppressWarnings(library(shinythemes))
 
-shinyUI(fluidPage(
+shinyUI(
+    fluidPage(
 
-    fluidRow(
-              br(),
-              column(width = 4, offset = 1),
-              p(strong("Project App")),
-              br() ),
+        theme = "bootstrap.css",
 
-    sidebarLayout(
+        tags$head(
+            tags$style(HTML("
+                            @import url('//fonts.googleapis.com/css?family=Catamaran');
 
-        sidebarPanel(
-            p("This is Shiny App"),
-            p("\n"),
-            p("Some other text")
+                            h1 {
+                            font-family: 'Catamaran', sans-serif;
+                            font-weight: 400;
+                            line-height: 1.1;
+                            color: #6D7993;
+                            align: center;
+                            }
+
+                            body {
+                            background-color: #EFEFEF;
+                            }
+
+                            "))),
+
+        tags$h1("Coursera Data Science Specialization Capstone Project App", align = "center"),
+        tags$hr(),
+        tags$br(),
+
+        fluidRow(
+            column(4, align = "left", offset = 0,
+                   tags$p("")
+            ),
+            column(4, align = "center", offset = 0,
+                   textInput("input.string", label = "Please, start typing your sentence here:", value = "", width = "100%"),
+                   tags$p("Scientifically predicted next word:"),
+                   verbatimTextOutput("prediction")
+            ),
+            column(4, align = "right", offset = 0,
+                   tags$p("")
+            )
+        ),
+        tags$br(),
+        tags$hr(),
+        tags$br(),
+
+        fluidRow(
+            column(12, align = "center", offset = 0,
+                    tags$p("How it works . App Presentation . Code on GitHub"),
+                    tags$p(
+                        tags$a(href = "https://www.linkedin.com/in/denisrasulev", "LinkedIn"),
+                        tags$span(" . "),
+                        tags$a(href = "https://www.facebook.com/denis.rasulev", "Facebook"),
+                        tags$span(" . "),
+                        tags$a(href = "https://twitter.com/drasulev", "Twitter"),
+                        tags$span(" . "),
+                        tags$a(href = "https://www.pinterest.com/denisrasulev", "Pinterest")
+                    )
+            )
         ),
 
-        mainPanel(
-            textInput("inputString", "Enter your sentence here", value = ""),
-            submitButton("Predict"),
-
-            h5("Predicted Next Word"),
-            verbatimTextOutput("prediction"),
-            textOutput('text')
-        )
+        tags$hr(),
+        tags$footer("© Denis Rasulev 2016", align = "center")
     )
-))
+)

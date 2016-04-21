@@ -1,139 +1,112 @@
-suppressWarnings(library(tm))
 suppressWarnings(library(shiny))
 suppressWarnings(library(stringr))
 
-# load One-Gram, Two-Gram, Three-Gram and Four-Gram Data frame files
-# This data is already cleansed with N-Grams frequency in decending order
-# The data was convert to lower case, punctuations removed, numbers removed,
-# white spaces removed, non print characters removed
+# load n-gram data files
+freq1 <- readRDS("/Volumes/data/coursera/capstone/data1.RDS")
+freq2 <- readRDS("/Volumes/data/coursera/capstone/data2.RDS")
+freq3 <- readRDS("/Volumes/data/coursera/capstone/data3.RDS")
+freq4 <- readRDS("/Volumes/data/coursera/capstone/data4.RDS")
 
-fDF1 <- readRDS("/Volumes/data/coursera/capstone/data1.RDS")
-fDF2 <- readRDS("/Volumes/data/coursera/capstone/data2.RDS")
-fDF3 <- readRDS("/Volumes/data/coursera/capstone/data3.RDS")
-#load("fDF4.RData");
-
-#-------------------------------------------------
-# This function "Clean up" the user input string
-# before it is used to predict the next term
-#-------------------------------------------------
-CleanInputString <- function(inStr)
+# clean user input
+clean <- function(x)
 {
-    # First remove the non-alphabatical characters
-    inStr <- iconv(inStr, "latin1", "ASCII", sub = " ")
-    inStr <- gsub("[^[:alpha:][:space:][:punct:]]", "", inStr);
+    # remove the non-alphabatical characters
+    x <- gsub("[[:digit:]]", "", x)
+    x <- gsub("[[:punct:]]", "", x)
 
-    # Return the cleaned resulting senytense
-    # If the resulting string is empty return empty and string.
-    if (nchar(inStr) > 0) {
-        return(inStr);
-    } else {
-        return("");
-    }
+    # if anything left, return it, otherwise return empty string
+    ifelse(nchar(x) > 0, return(x), return(""))
 }
 
-#---------------------------------------
-# Description of the Back Off Algorithm
-#---------------------------------------
-# To predict the next term of the user specified sentence
-# 1. first we use a FourGram; the first three words of which are the last three words of the user provided sentence
-#    for which we are trying to predict the next word. The FourGram is already sorted from highest to lowest frequency
-# 2. If no FourGram is found, we back off to ThreeGram (first two words of ThreeGram last two words of the sentence)
-# 3. If no TriGram is found, we back off to TwoGram (first word of TwoGram last word of the sentence)
-# 4. If no TwoGram is found, we back off to OneGram (the most common word with highest frequency)
-#
-PredNextTerm <- function(inStr)
+# To predict next word
+# 1. search 4grams for entry starting with the last three words of user input
+# 2. if nothing found, search 3grams for the last two words of user input
+# 3. if nothing found, search 2grams for the last word of user input
+# 4. if nothing found, use unigram with the highest frequency
+
+predict <- function(x)
 {
-    # Split the input string across white spaces and then extract the length
-    inStr <- unlist(strsplit(inStr, split=" "));
-    inStrLen <- length(inStr);
+    # split input string to words spearated by spaces and find its length
+    x <- unlist(strsplit(x, split = " "))
+    x.len <- length(x)
 
-    nxtTermFound <- FALSE;
-    predNxtTerm <- as.character(NULL);
+    was.found <- FALSE
+    found <- as.character()
 
-    # 1. First test the Four Gram using the four gram data frame
-    # if (inStrLen >= 3 & !nxtTermFound)
-    # {
-    #     # Assemble the terms of the input string separated by one white space each
-    #     inStr1 <- paste(inStr[(inStrLen-2):inStrLen], collapse=" ");
-    #
-    #     # Subset the Four Gram data frame
-    #     searchStr <- paste("^",inStr1, sep = "");
-    #     fDF4Temp <- fDF4[grep (searchStr, fDF4$terms), ];
-    #
-    #     # Check to see if any matching record returned
-    #     if ( length(fDF4Temp[, 1]) > 1 )
-    #     {
-    #         predNxtTerm <- fDF4Temp[1,1];
-    #         nxtTermFound <- TRUE;
-    #         mesg <<- "Next word is predicted using 4-gram."
-    #     }
-    #     fDF4Temp <- NULL;
-    # }
-
-    # 2. Next test the Three Gram using the three gram data frame
-    if (inStrLen >= 2 & !nxtTermFound)
+    # 1. search 4grams
+    if (x.len >= 3 & !was.found)
     {
-        # Assemble the terms of the input string separated by one white space each
-        inStr1 <- paste(inStr[(inStrLen-1):inStrLen], collapse=" ");
+        # take last three words from user input
+        input <- paste( x[(x.len - 2):x.len], collapse = " " )
 
-        # Subset the Three Gram data frame
-        searchStr <- paste("^",inStr1, sep = "");
-        fDF3Temp <- fDF3[grep (searchStr, fDF3$word), ];
+        # search 4grams for entry starting with the last three words of user input
+        search.string <- paste("^", input, sep = "")
+        tmp.df <- freq4[ grep(search.string, freq4$ngram), ]
 
-        # Check to see if any matching record returned
-        if ( length(fDF3Temp[, 1]) > 1 )
+        # check if anything matched
+        if ( nrow(tmp.df) != 0 )
         {
-            predNxtTerm <- fDF3Temp[1,1];
-            nxtTermFound <- TRUE;
+            found <- tmp.df[1,1]
+            was.found <- TRUE
         }
-        fDF3Temp <- NULL;
+        tmp.df <- NULL
     }
 
-    # 3. Next test the Two Gram using the three gram data frame
-    if (inStrLen >= 1 & !nxtTermFound)
+    # 2. search 3grams
+    if (x.len >= 2 & !was.found)
     {
-        # Assemble the terms of the input string separated by one white space each
-        inStr1 <- inStr[inStrLen];
+        # take last two words from user input
+        input <- paste( x[(x.len-1):x.len], collapse = " ")
 
-        # Subset the Two Gram data frame
-        searchStr <- paste("^",inStr1, sep = "");
-        fDF2Temp <- fDF2[grep (searchStr, fDF2$word), ];
+        # search 3grams for entry starting with the last two words of user input
+        search.string <- paste("^", input, sep = "")
+        tmp.df <- freq3[ grep(search.string, freq3$ngram), ]
 
-        # Check to see if any matching record returned
-        if ( length(fDF2Temp[, 1]) > 1 )
+        # check if anything matched
+        if ( nrow(tmp.df) != 0 )
         {
-            predNxtTerm <- fDF2Temp[1,1];
-            nxtTermFound <- TRUE;
+            found <- tmp.df[1,1]
+            was.found <- TRUE
         }
-        fDF2Temp <- NULL;
+        tmp.df <- NULL
     }
 
-    # 4. If no next term found in Four, Three and Two Grams return the most
-    #    frequently used term from the One Gram using the one gram data frame
-    if (!nxtTermFound & inStrLen > 0)
+    # 3. search 2grams
+    if (x.len >= 1 & !was.found)
     {
-        predNxtTerm <- fDF1$word[1];
+        # take last word from user input
+        input <- x[x.len]
+
+        # search 2grams for entry starting with the last word of user input
+        search.string <- paste("^", input, sep = "")
+        tmp.df <- freq2[ grep(search.string, freq2$ngram), ]
+
+        # check if anything matched
+        if ( nrow(tmp.df) != 0 )
+        {
+            found <- tmp.df[1,1]
+            was.found <- TRUE
+        }
+        tmp.df <- NULL;
     }
 
-    nextTerm <- word(predNxtTerm, -1)
-
-    if (inStrLen > 0){
-        dfTemp1 <- data.frame(nextTerm)
-        return(dfTemp1)
-    } else {
-        nextTerm <- ""
-        dfTemp1 <- data.frame(nextTerm)
-        return(dfTemp1)
+    # 4. if nothing found in 4,3,2 grams return most frequent unigam
+    if (!was.found & x.len > 0)
+    {
+        found <- freq1$ngram[1]
     }
+
+    final.result <- word(found, -1)
+
+    ifelse(x.len > 0, return(data.frame(final.result)), return(data.frame(final.result = "")))
+
 }
 
 shinyServer(function(input, output) {
 
     output$prediction <- renderPrint({
-        cleared <- CleanInputString(input$inputString)
-        strDF <- PredNextTerm(cleared)
-        cat("", as.character(strDF[1,1]))
-        cat("\n")
+        cleared.input <- clean(input$input.string)
+        string.df <- predict(cleared.input)
+        cat("", as.character(string.df[1,1]))
     })
-}
-)
+})
