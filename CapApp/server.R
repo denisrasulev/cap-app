@@ -2,10 +2,10 @@ suppressWarnings(library(shiny))
 suppressWarnings(library(stringr))
 
 # load n-gram data files
-freq1 <- readRDS("/Volumes/data/coursera/capstone/data1.RDS")
-freq2 <- readRDS("/Volumes/data/coursera/capstone/data2.RDS")
-freq3 <- readRDS("/Volumes/data/coursera/capstone/data3.RDS")
-freq4 <- readRDS("/Volumes/data/coursera/capstone/data4.RDS")
+freq1 <- readRDS("data/data1.RDS")
+freq2 <- readRDS("data/data2.RDS")
+freq3 <- readRDS("data/data3.RDS")
+freq4 <- readRDS("data/data4.RDS")
 
 # clean user input
 clean <- function(x)

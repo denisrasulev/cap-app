@@ -8,20 +8,6 @@ library(NLP)        # Basic classes and methods for Natural Language Processing
 library(slam)       # Data structures and algorithms for sparse arrays and matrices
 library(ggplot2)    # Implementation of the grammar of graphics in R
 
-# set our working directory
-setwd("/Volumes/data/coursera/capstone")
-
-# check if zip file already exists and download if it is missing
-if (!file.exists("./data/Coursera-SwiftKey.zip")) {
-    download.file("https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip",
-                  destfile = "./data/Coursera-SwiftKey.zip", method = "libcurl")
-}
-
-# check if data file exists and unzip it if necessary
-if (!file.exists("./data/en_US/en_US.blogs.txt")) {
-    unzip("Coursera-SwiftKey.zip", exdir = "./data/en_US", list = TRUE)
-}
-
 # FUNCTIONS DECLARATIONS BLOCK
 
 # function for cleaning
@@ -118,16 +104,14 @@ n4gram <- function(x) unlist(lapply(ngrams(words(x), 4), paste, collapse = " "),
 # MAIN PROCESSING BLOCK
 
 # read data
-numLines <- 5000
-news  <- readLines("./data/en_US/en_US.news.txt",    numLines, encoding = "UTF-8")
-blogs <- readLines("./data/en_US/en_US.blogs.txt",   numLines, encoding = "UTF-8")
-twits <- readLines("./data/en_US/en_US.twitter.txt", numLines, encoding = "UTF-8")
+numLines <- 500000L
+news  <- readLines("./data/en_US/en_US.news.txt",    numLines, encoding = "UTF-8", ok = TRUE, skipNul = TRUE, warn = FALSE)
+blogs <- readLines("./data/en_US/en_US.blogs.txt",   numLines, encoding = "UTF-8", ok = TRUE, skipNul = TRUE, warn = FALSE)
+twits <- readLines("./data/en_US/en_US.twitter.txt", numLines, encoding = "UTF-8", ok = TRUE, skipNul = TRUE, warn = FALSE)
 
 # combine into single block, clean and save
 sample <- c(news, blogs, twits)
-write(sample, file = "sample.txt")
 sample <- clean(sample)
-write(sample, file = "sample_clean.txt")
 
 # create our corpus and clean it
 corp <- VCorpus(VectorSource(sample))
@@ -139,26 +123,26 @@ rm(sample, news, blogs, twits)
 
 # create term document matrix for unigrams, reduce sparsity and save
 tdm1 <- TermDocumentMatrix(corp, control = list(tokenize = n1gram))
-tdm1 <- removeSparseTerms(tdm1, 0.9999)
+tdm1 <- removeSparseTerms(tdm1, 0.99999)
 frq1 <- sort.freq(tdm1)
-saveRDS(frq1, file = "data1.RDS")
+saveRDS(frq1, file = "/Volumes/data/coursera/capstone/capapp/CapApp/data/data1.RDS")
 
 # create term document matrix for bigrams, reduce sparsity and save
 tdm2 <- TermDocumentMatrix(corp, control = list(tokenize = n2gram))
-tdm2 <- removeSparseTerms(tdm2, 0.9999)
+tdm2 <- removeSparseTerms(tdm2, 0.99999)
 frq2 <- sort.freq(tdm2)
-saveRDS(frq2, file = "data2.RDS")
+saveRDS(frq2, file = "/Volumes/data/coursera/capstone/capapp/CapApp/data/data2.RDS")
 
 # create term document matrix for trigrams, reduce sparsity and save
 tdm3 <- TermDocumentMatrix(corp, control = list(tokenize = n3gram))
-tdm3 <- removeSparseTerms(tdm3, 0.9999)
+tdm3 <- removeSparseTerms(tdm3, 0.99999)
 frq3 <- sort.freq(tdm3)
-saveRDS(frq3, file = "data3.RDS")
+saveRDS(frq3, file = "/Volumes/data/coursera/capstone/capapp/CapApp/data/data3.RDS")
 
 # create term document matrix for fourgrams, reduce sparsity and save
 tdm4 <- TermDocumentMatrix(corp, control = list(tokenize = n4gram))
-tdm4 <- removeSparseTerms(tdm4, 0.9999)
+tdm4 <- removeSparseTerms(tdm4, 0.99999)
 frq4 <- sort.freq(tdm4)
-saveRDS(frq4, file = "data4.RDS")
+saveRDS(frq4, file = "/Volumes/data/coursera/capstone/capapp/CapApp/data/data4.RDS")
 
 # eof
