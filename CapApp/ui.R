@@ -53,7 +53,7 @@ shinyUI(
                     tags$p(
                         tags$a(href = "https://github.com/denrasulev/CapApp/blob/master/howitworks.Rmd", "How it works"),
                         tags$span("."),
-                        tags$a(href = "https://www.linkedin.com/in/denisrasulev", "App presentation"),
+                        tags$a(href = "http://rpubs.com/drasulev/capapp", "App presentation"),
                         tags$span("."),
                         tags$a(href = "https://github.com/denrasulev/CapApp/tree/master", "Code on GitHub")
                     ),

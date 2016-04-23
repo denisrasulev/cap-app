@@ -104,10 +104,10 @@ n4gram <- function(x) unlist(lapply(ngrams(words(x), 4), paste, collapse = " "),
 # MAIN PROCESSING BLOCK
 
 # read data
-numLines <- 500000L
-news  <- readLines("./data/en_US/en_US.news.txt",    numLines, encoding = "UTF-8", ok = TRUE, skipNul = TRUE, warn = FALSE)
-blogs <- readLines("./data/en_US/en_US.blogs.txt",   numLines, encoding = "UTF-8", ok = TRUE, skipNul = TRUE, warn = FALSE)
-twits <- readLines("./data/en_US/en_US.twitter.txt", numLines, encoding = "UTF-8", ok = TRUE, skipNul = TRUE, warn = FALSE)
+numLines <- 300000L
+news  <- readLines("/Volumes/data/coursera/capstone/data/en_US/en_US.news.txt",    numLines, encoding = "UTF-8", ok = TRUE, skipNul = TRUE, warn = FALSE)
+blogs <- readLines("/Volumes/data/coursera/capstone/data/en_US/en_US.blogs.txt",   numLines, encoding = "UTF-8", ok = TRUE, skipNul = TRUE, warn = FALSE)
+twits <- readLines("/Volumes/data/coursera/capstone/data/en_US/en_US.twitter.txt", numLines, encoding = "UTF-8", ok = TRUE, skipNul = TRUE, warn = FALSE)
 
 # combine into single block, clean and save
 sample <- c(news, blogs, twits)
