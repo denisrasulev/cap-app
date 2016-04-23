@@ -2,8 +2,8 @@ name: CapApp
 account: ranklord
 server: shinyapps.io
 appId: 96939
-bundleId: 429615
+bundleId: 430559
 url: https://ranklord.shinyapps.io/CapApp/
-when: 1461338337.43369
+when: 1461412466.84942
 asMultiple: FALSE
 asStatic: FALSE
